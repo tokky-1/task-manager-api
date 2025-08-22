@@ -4,6 +4,7 @@ from model import TaskModel,updateTaskModel as UTM
 from sqlalchemy.orm import Session
 from database.connect import get_db
 from database.model import Task
+
 app = FastAPI( title=" Day 2",
                 description=" ")
 
