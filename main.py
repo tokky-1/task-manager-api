@@ -24,8 +24,8 @@ def create_task(title:str,description:str,db:Session = Depends(get_db)):
     db.commit()
     db.refresh(task)
     return {"message": "Task created successfully",
-            "Title":title,
-            "Desvription": description}
+            "TITLE":title,
+            "DESCRIPTION": description}
 
 @app.get("/Read-All")
 def read_tasks(db: Session = Depends(get_db)):
