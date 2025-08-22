@@ -1,50 +1,70 @@
-from fastapi import FastAPI,Form
+from fastapi import FastAPI,Form,Depends
 from fastapi import  HTTPException,status
-from model import TaskModel
+from model import TaskModel,updateTaskModel as UTM
+from sqlalchemy.orm import Session
+from database.connect import get_db
+from database.model import Task
+
 app = FastAPI( title=" Day 2",
                 description=" ")
-tasks = [ ]
+
 
 @app.post("/")
 def welcome():
-    #print(" WELcome to this test page")
     return {" Welcome to this test page"}
 
 @app.post("/health")
 def health():
-    #print(" WELcome to this test page")
     return{" working just fine"}
 
 @app.post("/Create-Task") # not there shouldn't be spaces in the route name
-def create_task(task:TaskModel):
-    for t in tasks:
-        if t.ID == task.ID:
-            raise HTTPException(status_code=400, detail="Task ID already exists")
-    tasks.append(task)
-    return {"message": "Task created successfully", "task": task}
+def create_task(title:str,description:str,db:Session = Depends(get_db)):
+    task = Task(title = title,description = description)
+    db.add(task)
+    db.commit()
+    db.refresh(task)
+    return {"message": "Task created successfully",
+            "Title":title,
+            "Desvription": description}
 
 @app.get("/Read-All")
-def read_tasks():
-        return tasks
+def read_tasks(db: Session = Depends(get_db)):
+        return db.query(Task).all()
 
 @app.get("/Read-A-Task") 
-def read_a_task(id:int):
-    for t in tasks:
-        if id == tasks.ID:
-            return  t
+def read_a_task(id:int,db: Session = Depends(get_db)):
+    exist= db.query(Task).filter(id == Task.id).first()
+    if exist:
+         return{
+              "ID" : id,
+              "TITLE":exist.title,
+              "DESCRIPTION": exist.description
+         }
+    else:
+         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="task doesn't exist")
 
-@app.patch("/Update-task")
-def update_task(id: int,task:TaskModel):
-    for index, t in enumerate(tasks):
-        if t["id"] == id:
-                tasks[index] = task # overwrite the task
-                return {"message": "Task updated successfully", "task": task}
+@app.patch("/Update-task") # when creating an update its best to create a pydantic model for it
+
+def update_task(id: int,updated_data:UTM,db: Session = Depends(get_db)):
+    task = db.query(Task).filter(id == Task.id).first()
+    
+    if not task:
+            raise HTTPException(status_code=404, detail="Post not found")
+
+    for field, value in updated_data.dict(exclude_unset=True).items():
+            setattr(task, field, value)
         
-    raise HTTPException(status_code=404, detail="Task not found")                 
+    db.commit()
+    db.refresh(task)
+    return task
 
 @app.get("/Delete-Task") 
-def delete_a_task(id:int):
-    for t in tasks:
-        if id == tasks.ID:
-            tasks.remove(t)
-            return(f"Task with {id} removed")
+def delete_a_task(id:int,db: Session = Depends(get_db)):
+   exist = db.query(Task).filter(id == Task.id).first()
+   
+   if not exist:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+   db.delete(exist)
+   db.commit()
+   raise HTTPException(status_code=status.HTTP_204_NO_CONTENT)
