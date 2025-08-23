@@ -44,7 +44,6 @@ def read_a_task(id:int,db: Session = Depends(get_db)):
          raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="task doesn't exist")   
 
 @app.patch("/Update-task") # when creating an update its best to create a pydantic model for it
-
 def update_task(id: int,updated_data:UTM,db: Session = Depends(get_db)):
     task = db.query(Task).filter(id == Task.id).first()
     
