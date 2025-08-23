@@ -9,3 +9,4 @@ class TaskModel(BaseModel):
 class updateTaskModel(BaseModel): # when using model object is always a dictionary
     Title : Optional[str] = Field(None) 
     Description: Optional[str] = Field(None)
+    Completed: Optional[bool] = Field(None)
